@@ -1,0 +1,54 @@
+name: Deploy Backend via FTP (Production)
+
+on:
+  push:
+    branches:
+      - prod
+
+jobs:
+  deploy-via-ftp:
+    name: Build and Sync to Shared Hosting
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 1. Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Dibutuhkan oleh FTP-Deploy-Action untuk melacak perubahan file (hanya upload file yang berubah)
+
+      - name: 2. Setup PHP Environment
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4' # Sesuaikan dengan versi PHP di cPanel Anda (8.2 / 8.3 / 8.4)
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_mysql, bcmath, curl
+          coverage: none
+
+      - name: 3. Install Composer Dependencies (Vendor)
+        run: |
+          composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress
+
+             - name: 📂 Create Deployment Environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+
+      - name: 4. Sync Files via FTP to Shared Hosting
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: ${{ secrets.FTP_PORT || 21 }}
+          server-dir: ${{ secrets.FTP_SERVER_DIR }} # Path folder di cPanel, contoh: /tally-backend/ atau /public_html/api/
+          dangerous-clean-slate: false # Jangan hapus file lain di server
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            .env
+            tests/**
+            storage/framework/cache/data/**
+            storage/framework/sessions/**
+            storage/framework/views/**
+            storage/logs/**
