@@ -14,8 +14,8 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::get('/themes', [ThemeController::class, 'index']);
 
 Route::middleware('auth:sanctum')->group(function () {
-    // Broadcast channel authentication for Laravel Echo / Pusher
-    Broadcast::routes();
+    // Broadcast channel authentication for Laravel Echo / Pusher (using Sanctum Bearer Token)
+    Broadcast::routes(['middleware' => ['auth:sanctum']]);
 
     Route::get('/user', [UserController::class, 'show']);
     Route::put('/user/theme', [UserController::class, 'updateTheme']);
