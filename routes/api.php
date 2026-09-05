@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Broadcast;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ThemeController;
@@ -13,6 +14,9 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::get('/themes', [ThemeController::class, 'index']);
 
 Route::middleware('auth:sanctum')->group(function () {
+    // Broadcast channel authentication for Laravel Echo / Pusher
+    Broadcast::routes();
+
     Route::get('/user', [UserController::class, 'show']);
     Route::put('/user/theme', [UserController::class, 'updateTheme']);
 

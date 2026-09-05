@@ -47,6 +47,14 @@ class TransactionController extends Controller
             'transaction_date' => $request->transaction_date
         ]);
 
+        $transaction->load('user');
+
+        try {
+            broadcast(new \App\Events\TransactionCreatedEvent($transaction))->toOthers();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Broadcast TransactionCreated failed: ' . $e->getMessage());
+        }
+
         return response()->json([
             'message' => 'Transaksi berhasil dicatat',
             'transaction' => $transaction
@@ -68,6 +76,13 @@ class TransactionController extends Controller
         ]);
 
         $transaction->update($request->only(['type', 'amount', 'category', 'description', 'transaction_date']));
+        $transaction->load('user');
+
+        try {
+            broadcast(new \App\Events\TransactionUpdatedEvent($transaction))->toOthers();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Broadcast TransactionUpdated failed: ' . $e->getMessage());
+        }
 
         return response()->json([
             'message' => 'Transaksi berhasil diubah',
@@ -81,7 +96,19 @@ class TransactionController extends Controller
         
         $group = $request->user()->groups()->findOrFail($transaction->group_id);
 
+        $transactionId = (int) $transaction->id;
+        $groupId = (int) $transaction->group_id;
+        $amount = (float) $transaction->amount;
+        $type = (string) $transaction->type;
+        $userName = $request->user()->name;
+
         $transaction->delete();
+
+        try {
+            broadcast(new \App\Events\TransactionDeletedEvent($transactionId, $groupId, $amount, $type, $userName))->toOthers();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Broadcast TransactionDeleted failed: ' . $e->getMessage());
+        }
 
         return response()->json(['message' => 'Transaksi berhasil dihapus']);
     }
