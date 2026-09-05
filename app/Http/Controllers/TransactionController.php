@@ -22,7 +22,10 @@ class TransactionController extends Controller
         }
 
         return response()->json([
-            'transactions' => $query->orderBy('transaction_date', 'desc')->get()
+            'transactions' => $query->orderBy('transaction_date', 'desc')
+                                    ->orderBy('created_at', 'desc')
+                                    ->orderBy('id', 'desc')
+                                    ->get()
         ]);
     }
 
