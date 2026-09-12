@@ -62,4 +62,36 @@ class GroupController extends Controller
 
         return response()->json(['message' => 'Anggota berhasil dihapus dari grup']);
     }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255'
+        ]);
+
+        $group = $request->user()->groups()->findOrFail($id);
+
+        if ($group->pivot->role !== 'owner') {
+            return response()->json([
+                'message' => 'Hanya owner grup yang dapat mengubah nama grup'
+            ], 403);
+        }
+
+        $group->update([
+            'name' => $request->name
+        ]);
+
+        $group->load('users');
+
+        try {
+            broadcast(new \App\Events\GroupUpdatedEvent($group))->toOthers();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Broadcast GroupUpdatedEvent failed: ' . $e->getMessage());
+        }
+
+        return response()->json([
+            'message' => 'Nama grup berhasil diperbarui',
+            'group' => $group
+        ]);
+    }
 }
